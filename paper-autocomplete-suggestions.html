@@ -173,7 +173,16 @@
     <div>
       <!-- unselectable is needed to fix an issue related to the focus being taken away when clicking in the
        results scrollbar -->
-      <paper-material elevation="1" id="suggestionsWrapper" unselectable="on"></paper-material>
+      <paper-material elevation="1" id="suggestionsWrapper" unselectable="on">
+        <iron-list id="list" items="[[ _suggestions ]]" as="item">
+          <template>
+            <paper-item id$="[[ _getSuggestionId(index) ]]" role="option" aria-selected="false" on-tap="_onSelect">
+              <div>[[_getItemText(item)]]</div>
+              <paper-ripple></paper-ripple>
+            </paper-item>
+          </template>
+        </iron-list>
+      </paper-material>
 
       <!-- Default suggestion template -->
       <template id="defaultTemplate">
@@ -432,8 +441,8 @@
         // We need to enforce that dataHost is the suggestions and not the custom polymer element where the template
         // is defined. If we do not do this, it won't be possible to access paperSuggestions from the custom template
         // TODO: find a way to achieve this without modifying Polymer internal properties
-        this._suggestionTemplate.__dataHost = this;
-        this.templatize(this._suggestionTemplate);
+        // this._suggestionTemplate.__dataHost = this;
+        // this.templatize(this._suggestionTemplate);
       },
 
       attached: function () {
@@ -498,7 +507,7 @@
         this.isOpen = false;
         this.highlightedSuggestion = {};
 
-        this._clearSuggestions();
+        // this._clearSuggestions();
       },
 
       _handleSuggestions: function (event) {
@@ -598,7 +607,7 @@
        */
       _onSuggestionsChanged: function () {
         this.debounce('_onSuggestionChanged', function () {
-          this._renderSuggestions(this._suggestions);
+          // this._renderSuggestions(this._suggestions);
 
           if (this._suggestions.length > 0) {
             this._showSuggestionsWrapper();
@@ -823,7 +832,7 @@
       },
 
       _onSelect: function (event) {
-        var index = this.modelForElement(event.currentTarget).index;
+        var index = this.$.list.modelForElement(event.currentTarget).index;
         this._selection(index);
       },
 
