@@ -142,7 +142,7 @@
       :host ::slotted(paper-item) {
         min-height: var(--paper-item-min-height, 36px);
         padding: 0 16px;
-        position: relative;
+        /*position: relative;*/
         line-height: 18px;
 
         @apply --suggestions-item;
@@ -174,7 +174,7 @@
       <!-- unselectable is needed to fix an issue related to the focus being taken away when clicking in the
        results scrollbar -->
       <paper-material elevation="1" id="suggestionsWrapper" unselectable="on">
-        <iron-list id="list" items="[[ _suggestions ]]" as="item">
+        <iron-list id="list" items="[[ _suggestions ]]" as="item" scroll-target="suggestionsWrapper">
           <template>
             <paper-item id$="[[ _getSuggestionId(index) ]]" role="option" aria-selected="false" on-tap="_onSelect">
               <div>[[_getItemText(item)]]</div>
@@ -546,7 +546,7 @@
 
         var value = event.target.value;
 
-        if (value != null && value.length >= this.minLength) {
+        if (value !== null && value.length >= this.minLength) {
           value = value.toLowerCase();
 
           // Search for the word in the source properties.
@@ -726,13 +726,14 @@
        *  @param {string} direction Possible values are DIRECTION.UP or DIRECTION.DOWN
        */
       _moveHighlighted: function (direction) {
-        var items = this._getItems();
+        var items = this._getItems(),
+          suggestions = this._suggestions;
 
-        if (items.length === 0) {
+        if (items.length === 0 || !suggestions || suggestions.length === 0) {
           return;
         }
 
-        var numberOfItems = items.length - 1;
+        var numberOfItems = suggestions.length - 1;
 
         var isFirstItem = this._currentIndex === 0;
         var isLastItem = this._currentIndex === numberOfItems;
@@ -747,7 +748,7 @@
           this._currentIndex = this._currentIndex + modifier;
         }
 
-        var highlightedOption = this._suggestions[this._currentIndex];
+        var highlightedOption = suggestions[this._currentIndex];
         var highlightedItem = items[this._currentIndex];
 
         this._removeActive(items);
