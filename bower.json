@@ -37,7 +37,8 @@
     "iron-iconset-svg": "^2.0.0",
     "paper-item": "^2.0.0",
     "paper-ripple": "PolymerElements/paper-ripple#^2.0.0",
-    "paper-material": "^2.0.0"
+    "paper-material": "^2.0.0",
+    "iron-list": "^2.0.12"
   },
   "devDependencies": {
     "iron-component-page": "^2.0.0",
