@@ -174,7 +174,7 @@
       <!-- unselectable is needed to fix an issue related to the focus being taken away when clicking in the
        results scrollbar -->
       <paper-material elevation="1" id="suggestionsWrapper" unselectable="on">
-        <iron-list id="list"  scroll-target="suggestionsWrapper"
+        <iron-list id="list" scroll-target="suggestionsWrapper"
           selection-enabled
           items="[[ _suggestions ]]" as="item">
           <template>
@@ -683,8 +683,7 @@
        */
       _keyenter: function () {
         if (this.$.suggestionsWrapper.style.display === 'block' && this._currentIndex > -1) {
-          var index = this._currentIndex;
-          this._selection(index);
+          this._selection(this._currentIndex);
         }
       },
 
@@ -706,51 +705,52 @@
         } else {
           index += direction === DIRECTION.DOWN ? 1 : -1;
         }
+        this.set('_currentIndex', index);
         var option = suggestions[index];
 
         list.selectIndex(index);
 
         this._setHighlightedSuggestion(option, this._getSuggestionId(index));
 
-        this._scroll(direction);
+        this.$.list.scrollToIndex(index);
       },
 
       /**
        * Move scroll (if needed) to display the active element in the suggestions list.
        * @param {string} direction Direction to scroll. Possible values are `DIRECTION.UP` and `DIRECTION.DOWN`.
        */
-      _scroll: function (direction) {
-        var newScrollValue, isSelectedOutOfView;
-
-        var viewIndex = this._currentIndex - this._scrollIndex;
-
-        // This happens only when user switch from last item to first one
-        var isFirstItemAndOutOfView = this._currentIndex === 0 && viewIndex < 0;
-
-        // This happens only when user switch from first or no item to last one
-        var isLastItemAndOutOfView =
-          this._currentIndex === this._suggestions.length - 1 && viewIndex >= this.maxViewableItems;
-
-        if (isFirstItemAndOutOfView && direction === DIRECTION.DOWN) {
-          newScrollValue = 0;
-          isSelectedOutOfView = true;
-        } else if (isLastItemAndOutOfView && direction === DIRECTION.UP) {
-          newScrollValue = this._suggestions.length - this.maxViewableItems;
-          isSelectedOutOfView = true;
-        } else if (direction === DIRECTION.UP) {
-          newScrollValue = this._scrollIndex - 1;
-          isSelectedOutOfView = viewIndex < 0;
-        } else {
-          newScrollValue = this._scrollIndex + 1;
-          isSelectedOutOfView = viewIndex >= this.maxViewableItems;
-        }
-
-        // Only when the current active element is out of view, we need to move the position of the scroll
-        if (isSelectedOutOfView) {
-          this._scrollIndex = newScrollValue;
-          this.$.suggestionsWrapper.scrollTop = this._scrollIndex * this._itemHeight;
-        }
-      },
+      // _scroll: function (direction) {
+      //   var newScrollValue, isSelectedOutOfView;
+      //
+      //   var viewIndex = this._currentIndex - this._scrollIndex;
+      //
+      //   // This happens only when user switch from last item to first one
+      //   var isFirstItemAndOutOfView = this._currentIndex === 0 && viewIndex < 0;
+      //
+      //   // This happens only when user switch from first or no item to last one
+      //   var isLastItemAndOutOfView =
+      //     this._currentIndex === this._suggestions.length - 1 && viewIndex >= this.maxViewableItems;
+      //
+      //   if (isFirstItemAndOutOfView && direction === DIRECTION.DOWN) {
+      //     newScrollValue = 0;
+      //     isSelectedOutOfView = true;
+      //   } else if (isLastItemAndOutOfView && direction === DIRECTION.UP) {
+      //     newScrollValue = this._suggestions.length - this.maxViewableItems;
+      //     isSelectedOutOfView = true;
+      //   } else if (direction === DIRECTION.UP) {
+      //     newScrollValue = this._scrollIndex - 1;
+      //     isSelectedOutOfView = viewIndex < 0;
+      //   } else {
+      //     newScrollValue = this._scrollIndex + 1;
+      //     isSelectedOutOfView = viewIndex >= this.maxViewableItems;
+      //   }
+      //
+      //   // Only when the current active element is out of view, we need to move the position of the scroll
+      //   if (isSelectedOutOfView) {
+      //     this._scrollIndex = newScrollValue;
+      //     this.$.suggestionsWrapper.scrollTop = this._scrollIndex * this._itemHeight;
+      //   }
+      // },
 
       /**
        * Reset scroll back to zero
