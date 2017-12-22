@@ -692,8 +692,13 @@
        *  @param {string} direction Possible values are DIRECTION.UP or DIRECTION.DOWN
        */
       _moveHighlighted: function (direction) {
+        var suggestions   = this._suggestions;
+
+        if (!Array.isArray(suggestions) || suggestions.length === 0) {
+          return;
+        }
+
         var list        = this.$.list,
-          suggestions   = this._suggestions,
           lastIdx       = suggestions.length - 1,
           selected      = list.selectedItem,
           index         = selected ? suggestions.indexOf(selected) : -1;
@@ -705,6 +710,7 @@
         } else {
           index += direction === DIRECTION.DOWN ? 1 : -1;
         }
+
         this.set('_currentIndex', index);
         var option = suggestions[index];
 
