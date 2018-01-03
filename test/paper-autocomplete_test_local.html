@@ -196,7 +196,8 @@
           Polymer.dom.flush();
 
           setTimeout(function () {
-            expect(element.$.paperAutocompleteSuggestions.$.suggestionsWrapper.style.display).to.equal('none');
+            var elem = element.$.paperAutocompleteSuggestions.$.suggestionsWrapper;
+            expect(window.getComputedStyle(elem, null).getPropertyValue('display')).to.equal('none');
             done();
           }, 300);
         });
@@ -275,19 +276,21 @@
 
         it('should hide the suggestion wrapper and clear button', function (done) {
           doInput(input, 'A');
+          Polymer.Base.async(function () {
+            var elem = element.$.paperAutocompleteSuggestions.$.suggestionsWrapper;
+            expect(window.getComputedStyle(elem, null).getPropertyValue('display')).to.equal('block');
+            expect(getClearButtonDisplayStyle()).to.equal('inline-block');
 
-          expect(element.$.paperAutocompleteSuggestions.$.suggestionsWrapper.style.display).to.equal('block');
-          expect(getClearButtonDisplayStyle()).to.equal('inline-block');
+            element.hideSuggestions();
 
-          element.hideSuggestions();
+            Polymer.dom.flush();
 
-          Polymer.dom.flush();
+            Polymer.Base.async(function () {
+              expect(window.getComputedStyle(elem, null).getPropertyValue('display')).to.equal('none');
+              expect(getClearButtonDisplayStyle()).to.equal('none');
 
-          setTimeout(function () {
-            expect(element.$.paperAutocompleteSuggestions.$.suggestionsWrapper.style.display).to.equal('none');
-            expect(getClearButtonDisplayStyle()).to.equal('none');
-
-            done();
+              done();
+            }, 300);
           }, 300);
         });
       });

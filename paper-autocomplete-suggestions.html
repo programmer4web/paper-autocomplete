@@ -126,7 +126,7 @@
 <dom-module id="paper-autocomplete-suggestions">
   <template>
     <style>
-      :host:not([is-open]) paper-material {
+      :host(:not([is-open])) paper-material {
         display: none;
       }
 
@@ -241,7 +241,8 @@
         isOpen: {
           type: Boolean,
           value: false,
-          notify: true
+          notify: true,
+          reflectToAttribute: true
         },
 
         /**
