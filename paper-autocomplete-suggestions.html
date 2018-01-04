@@ -2,6 +2,7 @@
 <link rel="import" href="../paper-item/paper-item.html">
 <link rel="import" href="../paper-ripple/paper-ripple.html">
 <link rel="import" href="../paper-material/paper-material.html">
+<link rel="import" href="../iron-list/iron-list.html">
 
 <!--
   `paper-autocomplete-suggestions`
@@ -125,8 +126,12 @@
 <dom-module id="paper-autocomplete-suggestions">
   <template>
     <style>
-      paper-material {
+      :host(:not([is-open])) paper-material {
         display: none;
+      }
+
+      paper-material {
+        display: block;
         position: absolute;
         width: 100%;
         z-index: 1000;
@@ -141,7 +146,7 @@
       :host ::slotted(paper-item) {
         min-height: var(--paper-item-min-height, 36px);
         padding: 0 16px;
-        position: relative;
+        /*position: relative;*/
         line-height: 18px;
 
         @apply --suggestions-item;
@@ -154,8 +159,8 @@
         cursor: pointer;
       }
 
-      paper-item.active,
-      :host ::slotted(paper-item.active) {
+      paper-item[aria-selected],
+      :host ::slotted(paper-item[aria-selected]) {
         background: #eee;
         color: #333;
       }
@@ -172,7 +177,18 @@
     <div>
       <!-- unselectable is needed to fix an issue related to the focus being taken away when clicking in the
        results scrollbar -->
-      <paper-material elevation="1" id="suggestionsWrapper" unselectable="on"></paper-material>
+      <paper-material elevation="1" id="suggestionsWrapper" unselectable="on" role="listbox">
+        <iron-list id="list" scroll-target="suggestionsWrapper"
+          selection-enabled
+          items="[[ _suggestions ]]" as="item">
+          <template>
+            <paper-item id$="[[ _getSuggestionId(index) ]]" role="option" aria-selected$="[[ selected ]]" on-tap="_onSelect">
+              <div>[[ _getItemText(item) ]]</div>
+              <paper-ripple></paper-ripple>
+            </paper-item>
+          </template>
+        </iron-list>
+      </paper-material>
 
       <!-- Default suggestion template -->
       <template id="defaultTemplate">
@@ -225,7 +241,8 @@
         isOpen: {
           type: Boolean,
           value: false,
-          notify: true
+          notify: true,
+          reflectToAttribute: true
         },
 
         /**
@@ -350,15 +367,6 @@
         },
 
         /**
-         * Indicates the current position of the scroll. Then the `scrollTop` position is calculated multiplying the
-         * `_itemHeight` with the current index.
-         */
-        _scrollIndex: {
-          type: Number,
-          value: 0
-        },
-
-        /**
          * Height of each suggestion element in pixels
          */
         _itemHeight: {
@@ -431,8 +439,8 @@
         // We need to enforce that dataHost is the suggestions and not the custom polymer element where the template
         // is defined. If we do not do this, it won't be possible to access paperSuggestions from the custom template
         // TODO: find a way to achieve this without modifying Polymer internal properties
-        this._suggestionTemplate.__dataHost = this;
-        this.templatize(this._suggestionTemplate);
+        // this._suggestionTemplate.__dataHost = this;
+        // this.templatize(this._suggestionTemplate);
       },
 
       attached: function () {
@@ -474,30 +482,11 @@
       },
 
       /**
-       * Show the suggestions wrapper
-       */
-      _showSuggestionsWrapper: function () {
-        var suggestionsWrapper = this.$.suggestionsWrapper;
-
-        suggestionsWrapper.style.display = 'block';
-        suggestionsWrapper.setAttribute('role', 'listbox');
-
-        this.isOpen = true;
-      },
-
-      /**
        * Hide the suggestions wrapper
        */
       _hideSuggestionsWrapper: function () {
-        var suggestionsWrapper = this.$.suggestionsWrapper;
-
-        suggestionsWrapper.style.display = 'none';
-        suggestionsWrapper.removeAttribute('role');
-
         this.isOpen = false;
         this.highlightedSuggestion = {};
-
-        this._clearSuggestions();
       },
 
       _handleSuggestions: function (event) {
@@ -524,7 +513,6 @@
         if (arr.length && arr.length > 0) {
           this._suggestions = arr;
           this._currentIndex = -1;
-          this._scrollIndex = 0;
         } else {
           this._suggestions = [];
         }
@@ -532,11 +520,10 @@
 
       _createSuggestions: function (event) {
         this._currentIndex = -1;
-        this._scrollIndex = 0;
 
         var value = event.target.value;
 
-        if (value != null && value.length >= this.minLength) {
+        if (value !== null && value.length >= this.minLength) {
           value = value.toLowerCase();
 
           // Search for the word in the source properties.
@@ -560,54 +547,13 @@
       },
 
       /**
-       * Render suggestions in the suggestionsWrapper container
-       * @param {Array} suggestions An array containing the suggestions to be rendered. This value is not optional, so
-       *    in case no suggestions need to be rendered, you should either not call this method or provide an empty array.
-       */
-      _renderSuggestions: function (suggestions) {
-        var suggestionsContainer = Polymer.dom(this.$.suggestionsWrapper);
-        var isPolymer1 = !Polymer.Element;
-
-        this._clearSuggestions();
-
-        [].slice.call(suggestions).forEach(function (result, index) {
-          // clone the template and bind with the model
-          var clone = this.stamp();
-          clone.item = result;
-          clone.index = index;
-
-          // Different stamping mode based on Polymer version
-          if (isPolymer1) {
-            suggestionsContainer.appendChild(clone.root.querySelector('*'));
-          } else {
-            suggestionsContainer.appendChild(clone.root);
-          }
-
-        }.bind(this));
-      },
-
-      _clearSuggestions: function () {
-        var suggestionsContainer = Polymer.dom(this.$.suggestionsWrapper),
-          last;
-        while (last = suggestionsContainer.lastChild) suggestionsContainer.removeChild(last);
-      },
-
-      /**
        * Listener to changes to _suggestions state
        */
       _onSuggestionsChanged: function () {
         this.debounce('_onSuggestionChanged', function () {
-          this._renderSuggestions(this._suggestions);
-
-          if (this._suggestions.length > 0) {
-            this._showSuggestionsWrapper();
-          } else {
-            this._hideSuggestionsWrapper();
-          }
+          this.isOpen = (this._suggestions.length > 0) ? true : false;
 
           Polymer.dom.flush();
-
-          this._resetScroll();
 
           if (!this._hasItemHighBeenCalculated) {
             var firstSuggestionElement = this.$.suggestionsWrapper.querySelector('paper-item');
@@ -634,7 +580,7 @@
 
         this._value = this.value;
         this._text = this.text;
-        this._emptyItems();
+        this._suggestions = [];
 
         this._fireEvent(selectedOption, 'selected');
 
@@ -647,13 +593,6 @@
        */
       _getItems: function () {
         return this.$.suggestionsWrapper.querySelectorAll('paper-item');
-      },
-
-      /**
-       * Empty the list of current suggestions being displayed
-       */
-      _emptyItems: function () {
-        this._suggestions = [];
       },
 
       _getId: function () {
@@ -705,9 +644,8 @@
        * Event handler for the key ENTER press event
        */
       _keyenter: function () {
-        if (this.$.suggestionsWrapper.style.display === 'block' && this._currentIndex > -1) {
-          var index = this._currentIndex;
-          this._selection(index);
+        if (this.isOpen && this._currentIndex > -1) {
+          this._selection(this._currentIndex);
         }
       },
 
@@ -716,82 +654,30 @@
        *  @param {string} direction Possible values are DIRECTION.UP or DIRECTION.DOWN
        */
       _moveHighlighted: function (direction) {
-        var items = this._getItems();
+        var suggestions   = this._suggestions;
 
-        if (items.length === 0) {
+        if (!Array.isArray(suggestions) || suggestions.length === 0) {
           return;
         }
 
-        var numberOfItems = items.length - 1;
+        var list        = this.$.list,
+          lastIdx       = suggestions.length - 1,
+          selected      = list.selectedItem,
+          index         = selected ? suggestions.indexOf(selected) : -1;
 
-        var isFirstItem = this._currentIndex === 0;
-        var isLastItem = this._currentIndex === numberOfItems;
-        var isNoItemHighlighted = this._currentIndex === -1;
-
-        if ((isNoItemHighlighted || isFirstItem) && direction === DIRECTION.UP) {
-          this._currentIndex = numberOfItems;
-        } else if (isLastItem && direction === DIRECTION.DOWN) {
-          this._currentIndex = 0;
+        if ((index === -1 || index === 0) && direction === DIRECTION.UP) {
+          index = lastIdx;
+        } else if (index === lastIdx && direction === DIRECTION.DOWN) {
+          index = 0;
         } else {
-          var modifier = direction === DIRECTION.DOWN ? 1 : -1;
-          this._currentIndex = this._currentIndex + modifier;
+          index += direction === DIRECTION.DOWN ? 1 : -1;
         }
 
-        var highlightedOption = this._suggestions[this._currentIndex];
-        var highlightedItem = items[this._currentIndex];
+        this.set('_currentIndex', index);
 
-        this._removeActive(items);
-
-        highlightedItem.classList.add('active');
-        highlightedItem.setAttribute('aria-selected', 'true');
-
-        this._setHighlightedSuggestion(highlightedOption, highlightedItem.id);
-
-        this._scroll(direction);
-      },
-
-      /**
-       * Move scroll (if needed) to display the active element in the suggestions list.
-       * @param {string} direction Direction to scroll. Possible values are `DIRECTION.UP` and `DIRECTION.DOWN`.
-       */
-      _scroll: function (direction) {
-        var newScrollValue, isSelectedOutOfView;
-
-        var viewIndex = this._currentIndex - this._scrollIndex;
-
-        // This happens only when user switch from last item to first one
-        var isFirstItemAndOutOfView = this._currentIndex === 0 && viewIndex < 0;
-
-        // This happens only when user switch from first or no item to last one
-        var isLastItemAndOutOfView =
-          this._currentIndex === this._suggestions.length - 1 && viewIndex >= this.maxViewableItems;
-
-        if (isFirstItemAndOutOfView && direction === DIRECTION.DOWN) {
-          newScrollValue = 0;
-          isSelectedOutOfView = true;
-        } else if (isLastItemAndOutOfView && direction === DIRECTION.UP) {
-          newScrollValue = this._suggestions.length - this.maxViewableItems;
-          isSelectedOutOfView = true;
-        } else if (direction === DIRECTION.UP) {
-          newScrollValue = this._scrollIndex - 1;
-          isSelectedOutOfView = viewIndex < 0;
-        } else {
-          newScrollValue = this._scrollIndex + 1;
-          isSelectedOutOfView = viewIndex >= this.maxViewableItems;
-        }
-
-        // Only when the current active element is out of view, we need to move the position of the scroll
-        if (isSelectedOutOfView) {
-          this._scrollIndex = newScrollValue;
-          this.$.suggestionsWrapper.scrollTop = this._scrollIndex * this._itemHeight;
-        }
-      },
-
-      /**
-       * Reset scroll back to zero
-       */
-      _resetScroll: function () {
-        this.$.suggestionsWrapper.scrollTop = 0;
+        this._setHighlightedSuggestion(suggestions[index], this._getSuggestionId(index));
+        list.selectIndex(index);
+        list.scrollToIndex(index);
       },
 
       /**
@@ -822,7 +708,7 @@
       },
 
       _onSelect: function (event) {
-        var index = this.modelForElement(event.currentTarget).index;
+        var index = this.$.list.modelForElement(event.currentTarget).index;
         this._selection(index);
       },
 

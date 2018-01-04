@@ -4,7 +4,8 @@
   },
   "plugins": ["eslint-plugin-html"],
   "globals": {
-    "Polymer": false
+    "Polymer": false,
+    "sinon": false
   },
   "rules": {
     "comma-spacing": 2,

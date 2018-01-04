@@ -136,11 +136,12 @@
       });
 
       describe('when input is typed', function () {
-        var input, suggestions, suggestionItems;
+        var input, suggestions, suggestionItems, list;
 
         beforeEach(function () {
           input = element.$.autocompleteInput;
           suggestions = element.$.paperAutocompleteSuggestions.$.suggestionsWrapper;
+          list = suggestions.getEffectiveChildren('list')[0];
         });
 
         it('opens', function () {
@@ -153,7 +154,7 @@
         it('does not activate an item on opening', function () {
           enterCharacter(input, 'A');
 
-          var activeSuggestion = suggestions.querySelector('paper-item.active');
+          var activeSuggestion = suggestions.querySelector('paper-item[aria-selected]');
           expect(activeSuggestion).to.equal(null);
         });
 
@@ -161,8 +162,9 @@
           enterCharacter(input, 'A');
           enterCharacter(input, 'l');
 
-          suggestionItems = suggestions.querySelectorAll('paper-item');
-          expect(suggestionItems.length).to.equal(2);
+          // suggestionItems = suggestions.querySelectorAll('paper-item');
+          // expect(suggestionItems.length).to.equal(2);
+          expect(list.items.length).to.equal(2);
         });
 
         it('selects the next and previous suggestions with arrow keys', function () {
@@ -180,7 +182,7 @@
           expect(activeSuggestion()).to.equal(suggestionItems[0]);
 
           function activeSuggestion() {
-            return suggestions.querySelector('paper-item.active');
+            return suggestions.querySelector('paper-item[aria-selected]');
           }
         });
 
@@ -194,7 +196,8 @@
           Polymer.dom.flush();
 
           setTimeout(function () {
-            expect(element.$.paperAutocompleteSuggestions.$.suggestionsWrapper.style.display).to.equal('none');
+            var elem = element.$.paperAutocompleteSuggestions.$.suggestionsWrapper;
+            expect(window.getComputedStyle(elem, null).getPropertyValue('display')).to.equal('none');
             done();
           }, 300);
         });
@@ -221,7 +224,8 @@
               suggestionItems[0].click();
 
               setTimeout(function () {
-                expect(suggestions.querySelectorAll('paper-item').length).to.equal(0);
+                // expect(suggestions.querySelectorAll('paper-item').length).to.equal(0);
+                expect(list.items.length).to.equal(0);
                 done();
               }, 300);
             });
@@ -272,19 +276,21 @@
 
         it('should hide the suggestion wrapper and clear button', function (done) {
           doInput(input, 'A');
+          Polymer.Base.async(function () {
+            var elem = element.$.paperAutocompleteSuggestions.$.suggestionsWrapper;
+            expect(window.getComputedStyle(elem, null).getPropertyValue('display')).to.equal('block');
+            expect(getClearButtonDisplayStyle()).to.equal('inline-block');
 
-          expect(element.$.paperAutocompleteSuggestions.$.suggestionsWrapper.style.display).to.equal('block');
-          expect(getClearButtonDisplayStyle()).to.equal('inline-block');
+            element.hideSuggestions();
 
-          element.hideSuggestions();
+            Polymer.dom.flush();
 
-          Polymer.dom.flush();
+            Polymer.Base.async(function () {
+              expect(window.getComputedStyle(elem, null).getPropertyValue('display')).to.equal('none');
+              expect(getClearButtonDisplayStyle()).to.equal('none');
 
-          setTimeout(function () {
-            expect(element.$.paperAutocompleteSuggestions.$.suggestionsWrapper.style.display).to.equal('none');
-            expect(getClearButtonDisplayStyle()).to.equal('none');
-
-            done();
+              done();
+            }, 300);
           }, 300);
         });
       });
@@ -341,7 +347,7 @@
 
           enterCharacter(input, 'A');
 
-          var activeSuggestions = suggestions.querySelectorAll('paper-item.active');
+          var activeSuggestions = suggestions.querySelectorAll('paper-item[aria-selected]');
           var allSuggestions = suggestions.querySelectorAll('paper-item');
 
           expect(allSuggestions).not.to.be.empty;
@@ -355,7 +361,7 @@
 
           enterCharacter(input, 'A');
 
-          var activeSuggestions = suggestions.querySelectorAll('paper-item.active');
+          var activeSuggestions = suggestions.querySelectorAll('paper-item[aria-selected]');
           var allSuggestions = suggestions.querySelectorAll('paper-item');
 
           expect(allSuggestions).not.to.be.empty;
